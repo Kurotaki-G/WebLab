@@ -1,0 +1,61 @@
+<html>
+    <head>
+        <title>Serial Web 1</title>
+    </head>
+    <body>
+        <button onclick="window.location.href='/'"> Home </button>
+        <button onclick="window.location.href='/page1'"> Page 1 </button>
+        <button onclick="sendPost('/setBuzzer')"> SetBuzzer </button>
+
+        
+        <br><br>
+        Buzzer status: <span id="buzzer_status">--</span>
+
+        <br><br>
+        Serial text: <span id="serial_text">--</span>
+
+        <br><br>
+
+        <button onclick="sendPost('/setValue?enableLed=true')"> enable LED </button>
+        <button onclick="sendPost('/setValue?enableLed=false')"> disable LED </button>
+
+        <script>
+            function getStatus(){
+                var xhttp = new XMLHttpRequest();
+                xhttp.onreadystatechange = function() {
+                    if (this.readyState == 4 && this.status == 200) {
+                    //const objs = JSON.parse(this.responseText);
+                        var text = this.responseText;
+                        document.getElementById('buzzer_status').innerHTML = text;
+                    }
+                };
+                xhttp.open("GET", "/getBuzzer", true);
+                xhttp.send();
+            }
+
+            setInterval(function() {
+                getStatus();
+                getSerial();
+            }, 500);
+            function sendPost(postURL){
+                var xhttp = new XMLHttpRequest();
+                xhttp.open("POST", postURL, true);
+                xhttp.send();
+            }
+
+            function getSerial(){
+                var xhttp = new XMLHttpRequest();
+                xhttp.onreadystatechange = function() {
+                    if (this.readyState == 4 && this.status == 200) {
+                    //const objs = JSON.parse(this.responseText);
+                        var text = this.responseText;
+                        document.getElementById('serial_text').innerHTML = text;
+                    }
+                };
+                xhttp.open("GET", "/getSerial", true);
+                xhttp.send();
+            }
+
+        </script>
+    </body>
+</html>

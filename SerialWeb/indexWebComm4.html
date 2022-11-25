@@ -1,0 +1,167 @@
+<html>
+    <head>
+        <title>Serial Web Comm 4</title>
+        <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    </head>
+    <body>
+
+
+        LED is <span id="led_enabled"> -- </span>
+        <br><br>
+
+        Blink mode is <span id="blink_enabled"> -- </span>
+        <br><br>
+
+        <button onclick="sendPost('/setValue', this)" name="LED" value="true"> enable LED </button> 
+        <br><br>
+        
+        <button onclick="sendPost('/setValue', this)" name="LED" value="false"> disable LED </button> 
+
+        <!-- <button onclick="sendPost('/setValue?LED=false')"> disable LED </button> -->
+        <br><br>
+        <button onclick="sendPost('/setValue', this)" name="blink" value="true"> enable Blink </button> 
+        <br><br>
+        <button onclick="sendPost('/setValue', this)" name="blink" value="false"> disable Blink </button> 
+
+        <br><br>
+
+        <input type="number" id="speed_input" value=1000 min=10 max=2000 name="speed" onchange="sendPost('/setValue', this)">
+        10
+        <input type="range" id="speed_Rinput" value=1000 min=10 max=2000 name="speed" onchange="sendPost('/setValue', this)">
+        2000
+        <br><br>
+        
+        <br><br>
+        <br><br>
+        
+        Button is <span id="show_but"> -- </span>
+        <br><br>
+        Potentiometer is on <span id="show_pot"> -- </span>
+
+
+        <br><br>
+
+        <button onclick="switchDisplay('chart')"> Show Chart </button>
+        <div name="chart" id="curve_chart" style="width: 1900px; height: 500px; display:none"></div>
+
+        <script>
+            function switchDisplay(name){
+      var x = document.querySelectorAll('[name="'+name+'"]');
+      for(it of x) {
+        if(it.style.display === 'none') it.style.display = 'block';
+        else it.style.display = 'none';
+        // drawChart('Arduino Status','curve_chart', array);
+        getStatus();
+      }
+    }
+        </script>
+
+        <script>
+                
+
+                var array = [
+                ['Time', 'Period', 'Pot', 'But']
+                ,
+                // ['2004',  1000,      400],
+                // ['2005',  1170,      460],
+                // ['2006',  660,       1120],
+                // ['2007',  1030,      540]
+                // ['1',  100,      100]
+                ];
+
+            function getStatus(){
+                var xhttp = new XMLHttpRequest();
+                xhttp.responseType = "json";
+                xhttp.onreadystatechange = function() {
+                    if (this.readyState == 4 && this.status == 200) {
+                        // const objs = JSON.parse(this.responseText);
+                        const objs = this.response;
+                        if(objs.hasOwnProperty('LED')) document.getElementById('led_enabled').innerHTML = objs['LED']?'enabled':'disabled';
+                        if(objs.hasOwnProperty('blink')) document.getElementById('blink_enabled').innerHTML = objs['blink']?'enabled':'disabled';
+
+                        if(objs.hasOwnProperty('speed')) document.getElementById('speed_Rinput').value = objs['speed'];
+                        if(objs.hasOwnProperty('speed')) document.getElementById('speed_input').value = objs['speed'];
+
+                        
+                        if(objs.hasOwnProperty('speed') && objs.hasOwnProperty('pot') && objs.hasOwnProperty('but')) {
+
+
+                            let currentdate = new Date(); 
+
+                            id = currentdate.getHours() + ":" + currentdate.getMinutes()+ ":"+((currentdate.getSeconds()<10)?"0":"")+currentdate.getSeconds();
+
+                            let elem = [id, objs['speed']/10, objs['pot'], objs['but']?100:0];
+                            
+                            array.push(elem);
+                            
+                            drawChart('Arduino Status','curve_chart', array);
+                        }
+
+                        if(objs.hasOwnProperty('pot')) document.getElementById('show_pot').innerHTML  = objs['pot'];
+                        if(objs.hasOwnProperty('but')) document.getElementById('show_but').innerHTML = objs['but']?'PRESSED':'RELEASED';
+                    }
+                };
+                xhttp.open("GET", "/getStatus", true);
+                xhttp.send();
+            }
+
+            setInterval(function() {
+                getStatus();
+                // getSerial();
+
+            }, 100);
+            function sendPost(postURL, elm){
+                var xhttp = new XMLHttpRequest();
+                xhttp.open("POST", postURL, true);
+                let JSONo = {};
+                pushData(JSONo, elm);
+
+                xhttp.send(JSON.stringify(JSONo));
+            }
+
+            function pushData(JSONo, elm){
+                if(elm.value === "true") JSONo[elm.name] = true;
+                else if(elm.value === "false") JSONo[elm.name] = false;
+                else if(parseInt(elm.value)&&(parseInt(elm.value)==parseFloat(elm.value))) JSONo[elm.name] = parseInt(elm.value);
+                else if(parseFloat(elm.value)) JSONo[elm.name] = parseFloat(elm.value);
+                else JSONo[elm.name] = elm.value;
+            }
+
+            function getSerial(){
+                var xhttp = new XMLHttpRequest();
+                xhttp.onreadystatechange = function() {
+                    if (this.readyState == 4 && this.status == 200) {
+                    //const objs = JSON.parse(this.responseText);
+                        var text = this.responseText;
+                        document.getElementById('serial_text').innerHTML = text;
+                    }
+                };
+                xhttp.open("GET", "/getSerial", true);
+                xhttp.send();
+            }
+
+
+
+
+            google.charts.load('current', {'packages':['corechart']});
+            google.charts.setOnLoadCallback(drawChart);
+
+                
+            function drawChart(title, id, array) {
+                var data = google.visualization.arrayToDataTable(array);
+
+                var options = {
+                // title: 'Arduino Status',
+                title: title,
+                curveType: 'function',
+                legend: { position: 'bottom' }
+                };
+
+                // var chart = new google.visualization.LineChart(document.getElementById('curve_chart'));
+                var chart = new google.visualization.LineChart(document.getElementById(id));
+
+                chart.draw(data, options);
+            }
+        </script>
+    </body>
+</html>

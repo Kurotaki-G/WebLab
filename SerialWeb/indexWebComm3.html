@@ -1,0 +1,98 @@
+<html>
+    <head>
+        <title>Serial Web Comm 3</title>
+    </head>
+    <body>
+
+
+        LED is <span id="led_enabled"> -- </span>
+        <br><br>
+
+        Blink mode is <span id="blink_enabled"> -- </span>
+        <br><br>
+
+        <button onclick="sendPost('/setValue', this)" name="LED" value="true"> enable LED </button> 
+        <br><br>
+        <button onclick="sendPost('/setValue', this)" name="LED" value="false"> disable LED </button> 
+
+        <!-- <button onclick="sendPost('/setValue?LED=false')"> disable LED </button> -->
+        <br><br>
+        <button onclick="sendPost('/setValue', this)" name="blink" value="true"> enable Blink </button> 
+        <br><br>
+        <button onclick="sendPost('/setValue', this)" name="blink" value="false"> disable Blink </button> 
+
+        <br><br>
+
+        <!-- <input type="number" id="speed_input" value=1000 min=10 max=2000 name="speed"> -->
+        <input type="number" id="speed_input" value=1000 min=10 max=2000 name="speed" onchange="sendPost('/setValue', this)">
+        10
+        <!-- <input type="range" id="speed_Rinput" value=1000 min=10 max=2000 name="speed" onchange="document.getElementById('speed_input').value = this.value"> -->
+        <input type="range" id="speed_Rinput" value=1000 min=10 max=2000 name="speed" onchange="sendPost('/setValue', this)">
+        2000
+        <br><br>
+        <!-- <input type="button" value="Submit" onclick="sendPost('/setValue', document.getElementById('speed_input'))"> -->
+
+        <br><br>
+
+
+        <!-- <form action="/setValue" method="POST">
+            <input type="number" name="speed" min="10" value="1000">
+            <input type="submit" >
+        </form> -->
+
+        <script>
+            function getStatus(){
+                var xhttp = new XMLHttpRequest();
+                xhttp.responseType = "json";
+                xhttp.onreadystatechange = function() {
+                    if (this.readyState == 4 && this.status == 200) {
+                        // const objs = JSON.parse(this.responseText);
+                        const objs = this.response;
+                        if(objs.hasOwnProperty('LED')) document.getElementById('led_enabled').innerHTML = objs['LED']?'enabled':'disabled';
+                        if(objs.hasOwnProperty('blink')) document.getElementById('blink_enabled').innerHTML = objs['blink']?'enabled':'disabled';
+
+                        if(objs.hasOwnProperty('speed')) document.getElementById('speed_Rinput').value = objs['speed'];
+                        if(objs.hasOwnProperty('speed')) document.getElementById('speed_input').value = objs['speed'];
+                    }
+                };
+                xhttp.open("GET", "/getStatus", true);
+                xhttp.send();
+            }
+
+            setInterval(function() {
+                getStatus();
+                // getSerial();
+            }, 1000);
+            function sendPost(postURL, elm){
+                var xhttp = new XMLHttpRequest();
+                xhttp.open("POST", postURL, true);
+                let JSONo = {};
+                pushData(JSONo, elm);
+
+                xhttp.send(JSON.stringify(JSONo));
+            }
+
+            function pushData(JSONo, elm){
+                if(elm.value === "true") JSONo[elm.name] = true;
+                else if(elm.value === "false") JSONo[elm.name] = false;
+                else if(parseInt(elm.value)&&(parseInt(elm.value)==parseFloat(elm.value))) JSONo[elm.name] = parseInt(elm.value);
+                else if(parseFloat(elm.value)) JSONo[elm.name] = parseFloat(elm.value);
+                else JSONo[elm.name] = elm.value;
+            }
+
+            function getSerial(){
+                var xhttp = new XMLHttpRequest();
+                xhttp.onreadystatechange = function() {
+                    if (this.readyState == 4 && this.status == 200) {
+                    //const objs = JSON.parse(this.responseText);
+                        var text = this.responseText;
+                        document.getElementById('serial_text').innerHTML = text;
+                    }
+                };
+                xhttp.open("GET", "/getSerial", true);
+                xhttp.send();
+            }
+
+        </script>
+    </body>
+</html>
